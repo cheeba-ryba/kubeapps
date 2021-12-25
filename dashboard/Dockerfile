@@ -12,5 +12,5 @@ COPY . /app
 RUN yarn run prettier-check && yarn run ts-compile-check
 RUN yarn run build
 
-FROM nginx:1.21
+FROM nginxinc/nginx-unprivileged:1.20
 COPY --from=build /app/build /app
