@@ -4,8 +4,7 @@
 IMPORT_PATH:= github.com/kubeapps/kubeapps
 GO = /usr/bin/env go
 GOFMT = /usr/bin/env gofmt
-# IMAGE_TAG ?= dev-$(shell date +%FT%H-%M-%S-%Z)
-IMAGE_TAG ?= dev
+IMAGE_TAG ?= dev-$(shell date +%FT%H-%M-%S-%Z)
 VERSION ?= $$(git rev-parse HEAD)
 
 default: all
@@ -19,21 +18,18 @@ IMG_MODIFIER ?=
 
 GO_PACKAGES = ./...
 # GO_FILES := $(shell find $(shell $(GO) list -f '{{.Dir}}' $(GO_PACKAGES)) -name \*.go)
-run-qemu-static:
-	docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
-# all: kubeapps/dashboard kubeapps/apprepository-controller kubeapps/kubeops kubeapps/assetsvc kubeapps/asset-syncer kubeapps/pinniped-proxy kubeapps/kubeapps-apis
-all: kubeapps/dashboard kubeapps/apprepository-controller kubeapps/kubeops kubeapps/asset-syncer kubeapps/kubeapps-apis
+all: kubeapps/dashboard kubeapps/apprepository-controller kubeapps/kubeops kubeapps/assetsvc kubeapps/asset-syncer kubeapps/pinniped-proxy kubeapps/kubeapps-apis
 
 # TODO(miguel) Create Makefiles per component
 # TODO(mnelson) Or at least don't send the whole repo as the context for each project.
 # Currently the go projects include the whole repository as the docker context
 # only because the shared pkg/ directories?
-kubeapps/%: run-qemu-static
-	docker buildx build -t cyxou/kubeapps-$*$(IMG_MODIFIER):$(IMAGE_TAG) --build-arg "VERSION=${VERSION}" --push --platform linux/arm64,linux/arm -f cmd/$*/Dockerfile .
+kubeapps/%:
+	DOCKER_BUILDKIT=1 docker build -t cyxou/kubeapps-$*$(IMG_MODIFIER):$(IMAGE_TAG) --build-arg "VERSION=${VERSION}" -f cmd/$*/Dockerfile .
 
-kubeapps/dashboard: run-qemu-static
-	docker buildx build -t cyxou/kubeapps-dashboard$(IMG_MODIFIER):$(IMAGE_TAG) --push --platform linux/arm64,linux/arm -f dashboard/Dockerfile dashboard/
+kubeapps/dashboard:
+	docker build -t cyxou/kubeapps-dashboard$(IMG_MODIFIER):$(IMAGE_TAG) -f dashboard/Dockerfile dashboard/
 
 test:
 	$(GO) test $(GO_PACKAGES)
